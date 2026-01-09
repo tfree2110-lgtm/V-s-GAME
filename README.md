@@ -1,4 +1,3 @@
-# V-s-GAME
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,8 +6,102 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <title>Victoria's Word Game</title>
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%23ffb3d9'/><text y='72' x='25' font-family='Arial Black' font-size='65' fill='black'>V</text></svg>">
-    <link rel="stylesheet" href="style.css">
+    
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        /* ALL CSS STYLES */
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; touch-action: none; }
+        body {
+            background: #fff0f5; margin: 0; height: 100vh; overflow: hidden;
+            display: flex; justify-content: center; font-family: 'Arial Rounded MT Bold', sans-serif;
+        }
+
+        #game-wrapper {
+            width: 100%; max-width: 400px; height: 100%; display: flex;
+            flex-direction: column; align-items: center; position: relative;
+            padding: env(safe-area-inset-top) 15px 10px 15px;
+        }
+
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255, 240, 245, 0.98); z-index: 1000;
+            display: flex; flex-direction: column; justify-content: center; align-items: center;
+        }
+        .hidden { display: none !important; }
+
+        #bonus-counter {
+            background: white; color: #ff85c1; padding: 4px 10px; border-radius: 12px;
+            font-size: 11px; margin-top: 5px; border: 2px solid #ffb3d9; font-weight: bold;
+        }
+
+        .heart-icon { font-size: 80px; margin-bottom: 15px; display: inline-block; }
+        .pulse { animation: heartPulse 1.5s ease-in-out infinite; }
+        @keyframes heartPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
+
+        #back-btn, #shuffle-btn, #hint-btn {
+            background: white; border: 3px solid #ffb3d9; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 0 #ffb3d9;
+        }
+
+        #back-btn { position: absolute; top: 15px; left: 15px; z-index: 1100; width: 50px; height: 50px; font-size: 24px; }
+        #shuffle-btn { position: absolute; bottom: 0px; right: 0px; width: 50px; height: 50px; font-size: 22px; z-index: 60; }
+
+        #interaction-area { 
+            position: relative; width: 260px; height: 260px; margin-top: 10px;
+            display: flex; justify-content: center; align-items: center;
+        }
+
+        #hint-btn { width: 60px; height: 60px; font-size: 24px; z-index: 20; position: relative; }
+        #hint-btn:active { transform: scale(0.92); box-shadow: 0 2px 0 #ffb3d9; }
+
+        #found-words-container {
+            height: 125px; width: 100%; margin-top: 10px;
+            display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;
+            background: rgba(255, 255, 255, 0.6); padding: 12px; border-radius: 15px; 
+            border: 2px dashed #ffb3d9; overflow-y: auto;
+        }
+
+        .word-box {
+            background: white; padding: 5px 8px; border-radius: 8px;
+            font-size: 13px; font-weight: bold; color: #ffb3d9; border: 1.5px solid #ffb3d9;
+            min-width: 45px; text-align: center; letter-spacing: 2px;
+        }
+        .word-box.found { background: #ff85c1; color: white; border-color: #ff4da6; transform: scale(1.05); letter-spacing: 1px; }
+
+        #preview-box { height: 40px; font-size: 26px; font-weight: bold; color: #ff4da6; margin-top: 5px; }
+        .shake { animation: shake 0.3s ease-in-out; }
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+
+        #line-canvas { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 5; }
+
+        .letter-bubble {
+            position: absolute; width: 54px; height: 54px; background: white; color: #ff4da6;
+            border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            font-size: 24px; font-weight: bold; border: 3px solid #ffb3d9; box-shadow: 0 5px 0 #ffb3d9;
+            z-index: 10;
+        }
+        .letter-bubble.active { background: #ffb3d9; color: white; transform: scale(1.1); box-shadow: 0 2px 0 #ff85c1; }
+
+        #success-popup {
+            position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) scale(0);
+            background: white; padding: 20px; border-radius: 25px; border: 4px solid #ff85c1;
+            z-index: 2000; font-size: 18px; font-weight: bold; transition: 0.3s; width: 80%; text-align: center;
+        }
+        #success-popup.show { transform: translate(-50%, -50%) scale(1); }
+
+        #message-box {
+            background: #fff9c4; border: 2px solid #fbc02d; padding: 15px;
+            border-radius: 10px; margin: 20px 0; transform: rotate(-1deg);
+        }
+        #win-message { color: #5d4037; font-size: 16px; font-style: italic; margin: 0; }
+
+        .ribbon { background: #ff85c1; color: white; padding: 8px 18px; border-radius: 20px; border: 3px solid white; font-size: 14px; }
+        .kawaii-card { background: white; padding: 25px; border-radius: 35px; border: 5px solid #ff85c1; text-align: center; width: 90%; box-shadow: 0 10px 0 #ffb3d9; }
+        .menu-btn { background: #ff85c1; color: white; border: none; padding: 15px; border-radius: 30px; font-size: 18px; font-weight: bold; box-shadow: 0 5px 0 #e667a3; margin-bottom: 12px; width: 100%; }
+        .menu-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #e667a3; }
+    </style>
 </head>
 <body>
     <div id="game-wrapper">
@@ -62,299 +155,138 @@
             <div id="letter-ring"></div>
         </div>
     </div>
-    <script src="script.js"></script>
+
+    <script>
+        /* ALL JAVASCRIPT LOGIC */
+        const levels = {
+            easy: { letters: ['S', 'T', 'A', 'R'], words: ['STAR', 'ARTS', 'RATS', 'TARS', 'ART', 'RAT', 'SAT', 'TAR'], bonus: ['AS', 'AT'] },
+            medium: { letters: ['P', 'O', 'S', 'T'], words: ['POST', 'POTS', 'STOP', 'TOPS', 'OPTS', 'POT', 'TOP', 'OPT'], bonus: ['SO', 'TO'] },
+            hard: { letters: ['S', 'P', 'A', 'R', 'E', 'D'], words: ['SPARED', 'SPREAD', 'SPEARS', 'SPARES', 'SPARE', 'SPEAR', 'READS', 'DARES', 'PEARS', 'PARED', 'REAPS', 'REAP', 'DARE', 'READ', 'DEAR', 'PEAR', 'SPA', 'RED', 'ARE', 'EAR', 'RAP', 'PAD', 'SAD'], bonus: ['APE', 'APES', 'PAR', 'ERA', 'ERAS', 'ADS', 'SEA', 'PER', 'ASP', 'RAD', 'RES', 'SAP', 'PARE', 'REPS', 'REDS', 'EARS', 'RAPS', 'PADS'] }
+        };
+
+        const winMessages = {
+            easy: "OK SMARTY PANTS, LETS SEE HOW MEDUIM LEVEL GOES 😉",
+            medium: "I KNEW YOU WOULD GET IT MY LITTLE GENIUS ❤️",
+            hard: "WAHOOOOOO GOOD JOB MY LOVE YOU BEAT THE GAME I LOVE YOU SOOOO SOOOO MUCH I HOPE YOU ENJOYED IT 😊"
+        };
+
+        let currentLevel = 'easy', foundWords = [], bonusWordsFound = [], isSwiping = false, currentSelection = [], letterPositions = [];
+        const canvas = document.getElementById('line-canvas'), ctx = canvas.getContext('2d'), preview = document.getElementById('word-preview');
+
+        function showLevelMenu() { document.getElementById('home-screen').classList.add('hidden'); document.getElementById('level-menu').classList.remove('hidden'); }
+        function goToMenu() { ['win-screen', 'level-menu', 'back-btn', 'shuffle-btn', 'hint-btn', 'bonus-counter'].forEach(id => document.getElementById(id).classList.add('hidden')); document.getElementById('home-screen').classList.remove('hidden'); }
+        function fullReset() { if (confirm("Clear all progress? ❤️")) { localStorage.clear(); location.reload(); } }
+        function resetAndGoToMenu() { goToMenu(); }
+
+        function startGame(levelKey) {
+            currentLevel = levelKey;
+            document.getElementById('level-menu').classList.add('hidden');
+            ['back-btn', 'shuffle-btn', 'hint-btn', 'bonus-counter'].forEach(id => document.getElementById(id).classList.remove('hidden'));
+            const saved = localStorage.getItem('vicky_game_' + levelKey);
+            foundWords = saved ? JSON.parse(saved) : [];
+            const container = document.getElementById('found-words-container');
+            container.innerHTML = '';
+            [...levels[currentLevel].words].sort((a,b)=>a.length-b.length).forEach(w => {
+                const div = document.createElement('div'); div.className = 'word-box'; div.id = 'slot-'+w;
+                div.innerText = foundWords.includes(w) ? w.split('').join(' ') : "_ ".repeat(w.length).trim();
+                if(foundWords.includes(w)) div.classList.add('found');
+                container.appendChild(div);
+            });
+            renderLetters();
+        }
+
+        function renderLetters() {
+            const ring = document.getElementById('letter-ring'); ring.innerHTML = ''; letterPositions = [];
+            const radius = 95;
+            levels[currentLevel].letters.forEach((char, i) => {
+                const angle = (i / levels[currentLevel].letters.length) * Math.PI * 2 - Math.PI / 2;
+                const x = 130 + radius * Math.cos(angle), y = 130 + radius * Math.sin(angle);
+                const bubble = document.createElement('div'); bubble.className = 'letter-bubble'; bubble.innerText = char;
+                bubble.style.left = (x-27)+'px'; bubble.style.top = (y-27)+'px'; ring.appendChild(bubble);
+                letterPositions.push({ x, y, char, el: bubble });
+            });
+            canvas.width = 260; canvas.height = 260;
+        }
+
+        function useHint() {
+            const unfound = levels[currentLevel].words.filter(w => !foundWords.includes(w));
+            if (unfound.length === 0) return;
+            const target = unfound[Math.floor(Math.random() * unfound.length)];
+            const slot = document.getElementById('slot-' + target);
+            let currentArray = slot.innerText.split(' ');
+            let idx = currentArray.indexOf("_");
+            if (idx !== -1) {
+                currentArray[idx] = target[idx];
+                slot.innerText = currentArray.join(' ');
+                if (!currentArray.includes("_")) {
+                    slot.classList.add('found');
+                    foundWords.push(target);
+                    localStorage.setItem('vicky_game_' + currentLevel, JSON.stringify(foundWords));
+                    if (foundWords.length === levels[currentLevel].words.length) handleWin();
+                }
+            }
+        }
+
+        function processInput(clientX, clientY) {
+            if (!isSwiping) return;
+            const rect = canvas.getBoundingClientRect();
+            const x = clientX - rect.left, y = clientY - rect.top;
+            letterPositions.forEach(lp => {
+                const dist = Math.hypot(lp.x - x, lp.y - y);
+                if (dist < 28 && !currentSelection.includes(lp)) {
+                    currentSelection.push(lp); lp.el.classList.add('active');
+                    preview.innerText = currentSelection.map(s => s.char).join('');
+                    if (navigator.vibrate) navigator.vibrate(15);
+                }
+            });
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            if (currentSelection.length > 0) {
+                ctx.beginPath(); ctx.strokeStyle = '#ff85c1'; ctx.lineWidth = 10; ctx.lineCap = 'round';
+                currentSelection.forEach((lp, i) => { if (i === 0) ctx.moveTo(lp.x, lp.y); else ctx.lineTo(lp.x, lp.y); });
+                ctx.lineTo(x, y); ctx.stroke();
+            }
+        }
+
+        function endSwipe() {
+            if (!isSwiping) return;
+            const word = currentSelection.map(s => s.char).join('');
+            const data = levels[currentLevel];
+            const popup = document.getElementById('success-popup');
+            if (data.words.includes(word)) {
+                if (!foundWords.includes(word)) {
+                    foundWords.push(word);
+                    localStorage.setItem('vicky_game_' + currentLevel, JSON.stringify(foundWords));
+                    const slot = document.getElementById('slot-' + word);
+                    slot.innerText = word.split('').join(' '); slot.classList.add('found');
+                    popup.innerText = "GOOD JOB ❤️"; popup.classList.add('show');
+                    setTimeout(() => popup.classList.remove('show'), 1000);
+                    if (foundWords.length === data.words.length) handleWin();
+                } else { preview.classList.add('shake'); setTimeout(() => preview.classList.remove('shake'), 400); }
+            } else if (data.bonus && data.bonus.includes(word)) {
+                if (!bonusWordsFound.includes(word)) {
+                    bonusWordsFound.push(word);
+                    document.getElementById('bonus-counter').innerText = "Bonus: " + bonusWordsFound.length;
+                    popup.innerText = "BONUS! +1 LETTER ✨"; popup.classList.add('show');
+                    setTimeout(() => popup.classList.remove('show'), 1000);
+                    useHint();
+                }
+            } else if (word.length > 0) { preview.classList.add('shake'); setTimeout(() => preview.classList.remove('shake'), 400); }
+            isSwiping = false; currentSelection = [];
+            letterPositions.forEach(lp => lp.el.classList.remove('active'));
+            preview.innerText = ''; ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        function handleWin() { confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } }); document.getElementById('win-message').innerText = winMessages[currentLevel]; setTimeout(() => { document.getElementById('win-screen').classList.remove('hidden'); }, 1000); }
+        function shuffleLetters() { const chars = levels[currentLevel].letters; for (let i = chars.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [chars[i], chars[j]] = [chars[j], chars[i]]; } renderLetters(); }
+
+        const gameArea = document.getElementById('interaction-area');
+        gameArea.addEventListener('touchstart', (e) => { if (e.target.id === 'hint-btn' || e.target.id === 'shuffle-btn') return; isSwiping = true; processInput(e.touches[0].clientX, e.touches[0].clientY); }, {passive: false});
+        gameArea.addEventListener('touchmove', (e) => { if (isSwiping) { processInput(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); } }, {passive: false});
+        gameArea.addEventListener('touchend', endSwipe);
+        window.addEventListener('mouseup', endSwipe);
+        window.onresize = renderLetters;
+        gameArea.addEventListener('mousedown', (e) => { if (e.target.id === 'hint-btn' || e.target.id === 'shuffle-btn') return; isSwiping = true; processInput(e.clientX, e.clientY); });
+        window.addEventListener('mousemove', (e) => { if(isSwiping) processInput(e.clientX, e.clientY); });
+    </script>
 </body>
 </html>
-* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; user-select: none; touch-action: none; }
-body {
-    background: #fff0f5; margin: 0; height: 100vh; overflow: hidden;
-    display: flex; justify-content: center; font-family: 'Arial Rounded MT Bold', sans-serif;
-}
-
-#game-wrapper {
-    width: 100%; max-width: 400px; height: 100%; display: flex;
-    flex-direction: column; align-items: center; position: relative;
-    padding: env(safe-area-inset-top) 15px 10px 15px;
-}
-
-.overlay {
-    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-    background: rgba(255, 240, 245, 0.98); z-index: 1000;
-    display: flex; flex-direction: column; justify-content: center; align-items: center;
-}
-.hidden { display: none !important; }
-
-#bonus-counter {
-    background: white; color: #ff85c1; padding: 4px 10px; border-radius: 12px;
-    font-size: 11px; margin-top: 5px; border: 2px solid #ffb3d9; font-weight: bold;
-}
-
-.heart-icon { font-size: 80px; margin-bottom: 15px; display: inline-block; }
-.pulse { animation: heartPulse 1.5s ease-in-out infinite; }
-@keyframes heartPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.1); } }
-
-#back-btn, #shuffle-btn, #hint-btn {
-    background: white; border: 3px solid #ffb3d9; border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 4px 0 #ffb3d9;
-}
-
-#back-btn { position: absolute; top: 15px; left: 15px; z-index: 1100; width: 50px; height: 50px; font-size: 24px; }
-#shuffle-btn { position: absolute; bottom: 0px; right: 0px; width: 50px; height: 50px; font-size: 22px; z-index: 60; }
-
-#interaction-area { 
-    position: relative; width: 260px; height: 260px; margin-top: 10px;
-    display: flex; justify-content: center; align-items: center;
-}
-
-#hint-btn { 
-    width: 60px; height: 60px; font-size: 24px; z-index: 20; position: relative;
-}
-#hint-btn:active { transform: scale(0.92); box-shadow: 0 2px 0 #ffb3d9; }
-
-#found-words-container {
-    height: 125px; width: 100%; margin-top: 10px;
-    display: flex; flex-wrap: wrap; gap: 5px; justify-content: center;
-    background: rgba(255, 255, 255, 0.6); padding: 12px; border-radius: 15px; 
-    border: 2px dashed #ffb3d9; overflow-y: auto;
-}
-
-.word-box {
-    background: white; padding: 5px 8px; border-radius: 8px;
-    font-size: 13px; font-weight: bold; color: #ffb3d9; border: 1.5px solid #ffb3d9;
-    min-width: 45px; text-align: center; letter-spacing: 2px;
-}
-.word-box.found { background: #ff85c1; color: white; border-color: #ff4da6; transform: scale(1.05); letter-spacing: 1px; }
-
-#preview-box { height: 40px; font-size: 26px; font-weight: bold; color: #ff4da6; margin-top: 5px; }
-.shake { animation: shake 0.3s ease-in-out; }
-@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
-
-#line-canvas { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 5; }
-
-.letter-bubble {
-    position: absolute; width: 54px; height: 54px; background: white; color: #ff4da6;
-    border-radius: 50%; display: flex; align-items: center; justify-content: center;
-    font-size: 24px; font-weight: bold; border: 3px solid #ffb3d9; box-shadow: 0 5px 0 #ffb3d9;
-    z-index: 10;
-}
-.letter-bubble.active { background: #ffb3d9; color: white; transform: scale(1.1); box-shadow: 0 2px 0 #ff85c1; }
-
-#success-popup {
-    position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) scale(0);
-    background: white; padding: 20px; border-radius: 25px; border: 4px solid #ff85c1;
-    z-index: 2000; font-size: 18px; font-weight: bold; transition: 0.3s; width: 80%; text-align: center;
-}
-#success-popup.show { transform: translate(-50%, -50%) scale(1); }
-
-#message-box {
-    background: #fff9c4; border: 2px solid #fbc02d; padding: 15px;
-    border-radius: 10px; margin: 20px 0; transform: rotate(-1deg);
-}
-#win-message { color: #5d4037; font-size: 16px; font-style: italic; margin: 0; }
-
-.ribbon { background: #ff85c1; color: white; padding: 8px 18px; border-radius: 20px; border: 3px solid white; font-size: 14px; }
-.kawaii-card { background: white; padding: 25px; border-radius: 35px; border: 5px solid #ff85c1; text-align: center; width: 90%; box-shadow: 0 10px 0 #ffb3d9; }
-.menu-btn { background: #ff85c1; color: white; border: none; padding: 15px; border-radius: 30px; font-size: 18px; font-weight: bold; box-shadow: 0 5px 0 #e667a3; margin-bottom: 12px; width: 100%; }
-.menu-btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #e667a3; }
-const levels = {
-    easy: { 
-        letters: ['S', 'T', 'A', 'R'], 
-        words: ['STAR', 'ARTS', 'RATS', 'TARS', 'ART', 'RAT', 'SAT', 'TAR'],
-        bonus: ['AS', 'AT']
-    },
-    medium: { 
-        letters: ['P', 'O', 'S', 'T'], 
-        words: ['POST', 'POTS', 'STOP', 'TOPS', 'OPTS', 'POT', 'TOP', 'OPT'],
-        bonus: ['SO', 'TO']
-    },
-    hard: { 
-        letters: ['S', 'P', 'A', 'R', 'E', 'D'], 
-        words: ['SPARED', 'SPREAD', 'SPEARS', 'SPARES', 'SPARE', 'SPEAR', 'READS', 'DARES', 'PEARS', 'PARED', 'REAPS', 'REAP', 'DARE', 'READ', 'DEAR', 'PEAR', 'SPA', 'RED', 'ARE', 'EAR', 'RAP', 'PAD', 'SAD'],
-        bonus: ['APE', 'APES', 'PAR', 'ERA', 'ERAS', 'ADS', 'SEA', 'PER', 'ASP', 'RAD', 'RES', 'SAP', 'PARE', 'REPS', 'REDS', 'EARS', 'RAPS', 'PADS']
-    }
-};
-
-const winMessages = {
-    easy: "OK SMARTY PANTS, LETS SEE HOW MEDUIM LEVEL GOES 😉",
-    medium: "I KNEW YOU WOULD GET IT MY LITTLE GENIUS ❤️",
-    hard: "WAHOOOOOO GOOD JOB MY LOVE YOU BEAT THE GAME I LOVE YOU SOOOO SOOOO MUCH I HOPE YOU ENJOYED IT 😊"
-};
-
-let currentLevel = 'easy', foundWords = [], bonusWordsFound = [], isSwiping = false, currentSelection = [], letterPositions = [];
-const canvas = document.getElementById('line-canvas'), ctx = canvas.getContext('2d'), preview = document.getElementById('word-preview');
-
-function showLevelMenu() { 
-    document.getElementById('home-screen').classList.add('hidden'); 
-    document.getElementById('level-menu').classList.remove('hidden'); 
-}
-
-function goToMenu() { 
-    ['win-screen', 'level-menu', 'back-btn', 'shuffle-btn', 'hint-btn', 'bonus-counter'].forEach(id => document.getElementById(id).classList.add('hidden')); 
-    document.getElementById('home-screen').classList.remove('hidden'); 
-}
-
-function fullReset() {
-    if (confirm("Clear all progress? ❤️")) { localStorage.clear(); location.reload(); }
-}
-
-function resetAndGoToMenu() { goToMenu(); }
-
-function startGame(levelKey) {
-    currentLevel = levelKey;
-    document.getElementById('level-menu').classList.add('hidden');
-    ['back-btn', 'shuffle-btn', 'hint-btn', 'bonus-counter'].forEach(id => document.getElementById(id).classList.remove('hidden'));
-    
-    const saved = localStorage.getItem('vicky_game_' + levelKey);
-    foundWords = saved ? JSON.parse(saved) : [];
-    bonusWordsFound = [];
-    document.getElementById('bonus-counter').innerText = "Bonus Words: 0";
-    
-    const container = document.getElementById('found-words-container');
-    container.innerHTML = '';
-    [...levels[currentLevel].words].sort((a,b)=>a.length-b.length).forEach(w => {
-        const div = document.createElement('div'); div.className = 'word-box'; div.id = 'slot-'+w;
-        div.innerText = foundWords.includes(w) ? w.split('').join(' ') : "_ ".repeat(w.length).trim();
-        if(foundWords.includes(w)) div.classList.add('found');
-        container.appendChild(div);
-    });
-    renderLetters();
-}
-
-function renderLetters() {
-    const ring = document.getElementById('letter-ring');
-    ring.innerHTML = ''; letterPositions = [];
-    const radius = 95;
-    levels[currentLevel].letters.forEach((char, i) => {
-        const angle = (i / levels[currentLevel].letters.length) * Math.PI * 2 - Math.PI / 2;
-        const x = 130 + radius * Math.cos(angle), y = 130 + radius * Math.sin(angle);
-        const bubble = document.createElement('div'); bubble.className = 'letter-bubble'; bubble.innerText = char;
-        bubble.style.left = (x-27)+'px'; bubble.style.top = (y-27)+'px'; ring.appendChild(bubble);
-        letterPositions.push({ x, y, char, el: bubble });
-    });
-    canvas.width = 260; canvas.height = 260;
-}
-
-function shuffleLetters() {
-    const chars = levels[currentLevel].letters;
-    for (let i = chars.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [chars[i], chars[j]] = [chars[j], chars[i]];
-    }
-    renderLetters();
-}
-
-function useHint() {
-    const unfound = levels[currentLevel].words.filter(w => !foundWords.includes(w));
-    if (unfound.length === 0) return;
-
-    const target = unfound[Math.floor(Math.random() * unfound.length)];
-    const slot = document.getElementById('slot-' + target);
-    let currentArray = slot.innerText.split(' ');
-    
-    // Find first empty index and reveal one letter
-    let idx = currentArray.indexOf("_");
-    if (idx !== -1) {
-        currentArray[idx] = target[idx];
-        slot.innerText = currentArray.join(' ');
-        
-        // If that was the last letter, mark as found
-        if (!currentArray.includes("_")) {
-            slot.classList.add('found');
-            foundWords.push(target);
-            localStorage.setItem('vicky_game_' + currentLevel, JSON.stringify(foundWords));
-            if (foundWords.length === levels[currentLevel].words.length) handleWin();
-        }
-    }
-}
-
-function processInput(clientX, clientY) {
-    if (!isSwiping) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = clientX - rect.left, y = clientY - rect.top;
-    
-    letterPositions.forEach(lp => {
-        const dist = Math.hypot(lp.x - x, lp.y - y);
-        if (dist < 28 && !currentSelection.includes(lp)) {
-            currentSelection.push(lp); 
-            lp.el.classList.add('active');
-            preview.innerText = currentSelection.map(s => s.char).join('');
-            if (navigator.vibrate) navigator.vibrate(15);
-        }
-    });
-
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    if (currentSelection.length > 0) {
-        ctx.beginPath(); ctx.strokeStyle = '#ff85c1'; ctx.lineWidth = 10; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-        currentSelection.forEach((lp, i) => { 
-            if (i === 0) ctx.moveTo(lp.x, lp.y); else ctx.lineTo(lp.x, lp.y); 
-        });
-        ctx.lineTo(x, y); ctx.stroke();
-    }
-}
-
-function endSwipe() {
-    if (!isSwiping) return;
-    const word = currentSelection.map(s => s.char).join('');
-    const data = levels[currentLevel];
-    const popup = document.getElementById('success-popup');
-
-    if (data.words.includes(word)) {
-        if (!foundWords.includes(word)) {
-            foundWords.push(word);
-            localStorage.setItem('vicky_game_' + currentLevel, JSON.stringify(foundWords));
-            const slot = document.getElementById('slot-' + word);
-            slot.innerText = word.split('').join(' ');
-            slot.classList.add('found');
-            popup.innerText = "GOOD JOB ❤️";
-            popup.classList.add('show');
-            setTimeout(() => popup.classList.remove('show'), 1000);
-            if (foundWords.length === data.words.length) handleWin();
-        } else {
-            preview.classList.add('shake');
-            setTimeout(() => preview.classList.remove('shake'), 400);
-        }
-    } else if (data.bonus && data.bonus.includes(word)) {
-        if (!bonusWordsFound.includes(word)) {
-            bonusWordsFound.push(word);
-            document.getElementById('bonus-counter').innerText = "Bonus Words: " + bonusWordsFound.length;
-            popup.innerText = "BONUS! +1 LETTER ✨";
-            popup.classList.add('show');
-            setTimeout(() => popup.classList.remove('show'), 1000);
-            useHint();
-        }
-    } else if (word.length > 0) {
-        preview.classList.add('shake');
-        setTimeout(() => preview.classList.remove('shake'), 400);
-    }
-
-    isSwiping = false; currentSelection = [];
-    letterPositions.forEach(lp => lp.el.classList.remove('active'));
-    preview.innerText = ''; ctx.clearRect(0, 0, canvas.width, canvas.height);
-}
-
-function handleWin() {
-    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-    document.getElementById('win-message').innerText = winMessages[currentLevel];
-    setTimeout(() => { document.getElementById('win-screen').classList.remove('hidden'); }, 1000);
-}
-
-const gameArea = document.getElementById('interaction-area');
-gameArea.addEventListener('touchstart', (e) => { 
-    if (e.target.id === 'hint-btn' || e.target.id === 'shuffle-btn') return;
-    isSwiping = true; 
-    processInput(e.touches[0].clientX, e.touches[0].clientY); 
-}, {passive: false});
-
-gameArea.addEventListener('touchmove', (e) => { 
-    if (isSwiping) { processInput(e.touches[0].clientX, e.touches[0].clientY); e.preventDefault(); } 
-}, {passive: false});
-
-gameArea.addEventListener('touchend', endSwipe);
-window.addEventListener('mouseup', endSwipe);
-window.onresize = renderLetters;
-gameArea.addEventListener('mousedown', (e) => { 
-    if (e.target.id === 'hint-btn' || e.target.id === 'shuffle-btn') return;
-    isSwiping = true; processInput(e.clientX, e.clientY); 
-});
-window.addEventListener('mousemove', (e) => { if(isSwiping) processInput(e.clientX, e.clientY); });
