@@ -14,9 +14,8 @@
         .hidden { display: none !important; }
         #bonus-counter { background: white; color: #ff85c1; padding: 4px 10px; border-radius: 12px; font-size: 11px; margin-top: 5px; border: 2px solid #ffb3d9; font-weight: bold; }
         
-        /* SCROLLABLE WORD BOX FIX */
         #found-words-container {
-            height: 180px; /* Made taller for Hard level */
+            height: 180px; 
             width: 100%; 
             margin-top: 10px;
             display: flex; 
@@ -27,8 +26,8 @@
             padding: 15px; 
             border-radius: 15px; 
             border: 2px dashed #ffb3d9; 
-            overflow-y: auto; /* This allows scrolling */
-            touch-action: pan-y; /* Ensures finger scrolling works */
+            overflow-y: auto; 
+            touch-action: pan-y; 
             -webkit-overflow-scrolling: touch;
         }
 
@@ -47,6 +46,7 @@
         .ribbon { background: #ff85c1; color: white; padding: 8px 18px; border-radius: 20px; border: 3px solid white; font-size: 14px; }
         .kawaii-card { background: white; padding: 25px; border-radius: 35px; border: 5px solid #ff85c1; text-align: center; width: 90%; box-shadow: 0 10px 0 #ffb3d9; }
         .menu-btn { background: #ff85c1; color: white; border: none; padding: 15px; border-radius: 30px; font-size: 18px; font-weight: bold; box-shadow: 0 5px 0 #e667a3; margin-bottom: 12px; width: 100%; }
+        .restart-btn { background: #e0e0e0; color: #757575; box-shadow: 0 5px 0 #bdbdbd; font-size: 14px; }
         #success-popup { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%) scale(0); background: white; padding: 20px; border-radius: 25px; border: 4px solid #ff85c1; z-index: 2000; font-size: 18px; font-weight: bold; transition: 0.3s; width: 80%; text-align: center; }
         #success-popup.show { transform: translate(-50%, -50%) scale(1); }
     </style>
@@ -54,8 +54,20 @@
 <body>
     <div id="game-wrapper">
         <button id="back-btn" class="hidden" onclick="goToMenu()">🏠</button>
-        <div id="home-screen" class="overlay"><div class="kawaii-card"><h1>HEY LIL MOMMA</h1><p>Are you ready?</p><button class="menu-btn" onclick="showLevelMenu()">START GAME 🎀</button></div></div>
-        <div id="level-menu" class="overlay hidden"><div class="kawaii-card"><h2>Choose a Level</h2><button class="menu-btn" onclick="startGame('easy')">EASY</button><button class="menu-btn" onclick="startGame('medium')">MEDIUM</button><button class="menu-btn" onclick="startGame('hard')">HARD</button><button class="menu-btn" onclick="goToMenu()">BACK</button></div></div>
+        <div id="home-screen" class="overlay"><div class="kawaii-card"><h1>HEY LIL MOMMA</h1><p>Ready to play?</p><button class="menu-btn" onclick="showLevelMenu()">START GAME 🎀</button></div></div>
+        
+        <div id="level-menu" class="overlay hidden">
+            <div class="kawaii-card">
+                <h2>Choose a Level</h2>
+                <button class="menu-btn" onclick="startGame('easy')">EASY</button>
+                <button class="menu-btn" onclick="startGame('medium')">MEDIUM</button>
+                <button class="menu-btn" onclick="startGame('hard')">HARD</button>
+                <button class="menu-btn" onclick="goToMenu()">BACK</button>
+                <hr style="border: 1px dashed #ffb3d9; margin: 10px 0;">
+                <button class="menu-btn restart-btn" onclick="fullReset()">RESTART ALL PROGRESS 🗑️</button>
+            </div>
+        </div>
+
         <div id="win-screen" class="overlay hidden"><div class="kawaii-card"><h2>LEVEL CLEAR!! ❤️</h2><p id="win-message"></p><button class="menu-btn" onclick="resetAndGoToMenu()">PLAY AGAIN 🎀</button></div></div>
         <div class="kawaii-header"><div class="ribbon">🎀 VICTORIA'S WORD GAME 🎀</div><div id="bonus-counter" class="hidden">Bonus: 0</div></div>
         <div id="success-popup">GOOD JOB ❤️</div>
@@ -72,9 +84,12 @@
         const winMessages = { easy: "SMARTY PANTS! NEXT LEVEL? 😉", medium: "GENIUS! ❤️", hard: "I LOVE YOU SO MUCH! YOU BEAT IT! 😊" };
         let currentLevel = 'easy', foundWords = [], bonusWordsFound = [], isSwiping = false, currentSelection = [], letterPositions = [];
         const canvas = document.getElementById('line-canvas'), ctx = canvas.getContext('2d'), preview = document.getElementById('word-preview');
+        
         function showLevelMenu() { document.getElementById('home-screen').classList.add('hidden'); document.getElementById('level-menu').classList.remove('hidden'); }
         function goToMenu() { location.reload(); }
         function resetAndGoToMenu() { goToMenu(); }
+        function fullReset() { if(confirm("Clear all your found words and start over? ❤️")) { localStorage.clear(); location.reload(); } }
+
         function startGame(levelKey) {
             currentLevel = levelKey;
             document.getElementById('level-menu').classList.add('hidden');
